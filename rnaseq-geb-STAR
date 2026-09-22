@@ -1,0 +1,46 @@
+### STAR: Spliced Transcripts Alignment to a Reference (splice-aware aligner)
+#RNAseq is from mature mRNA (introns removed)
+#run STAR once per sample (one R1 + R2 file)
+
+# Tools/data needed for STAR:
+# 1. Human genome FASTA (GRCh38)
+# 2. GTF annotation file (exons, introns, transcripts)
+# 3. STAR installed on your system
+
+which STAR
+STAR --version # to see what STAR/if installed if not:
+
+module load star # add STAR to the path
+
+mkdir ~/index #this makes new folder called index so when we run --genomeDir it specifies where to put it
+
+################################
+STEP 1: Building the STAR genome index! (run once per project)
+###############################
+STAR --runThreadN 16 \                       # number of CPU threads to use
+     --runMode genomeGenerate \              # tells STAR to build a genome index
+     --genomeDir ~/index \                   # folder where STAR will write index files
+     --genomeFastaFiles /path/to/reference.fa \  # full human genome FASTA
+     --sjdbGTFfile /path/to/annotation.gtf \     # matching GTF annotation file
+     --sjdbOverhang 100                      # read length minus 1 (e.g., 101bp reads → 100) #investigate how u know this?
+
+#should output a folder of STAR index files
+
+################################
+#STEP 2: Align each sample (run once per sample)
+################################
+STAR \
+  --runThreadN 8 \                                      # number of CPU threads
+  --genomeDir ~/index \                                 # folder containing STAR genome index
+  --readFilesIn SampleA_R1.fastq.gz SampleA_R2.fastq.gz \  # paired-end FASTQ files
+  --readFilesCommand zcat \                             # decompress .gz files on the fly
+  --twopassMode Basic \                                 # improves splice junction detection
+  --outSAMtype BAM SortedByCoordinate \                 # output sorted BAM for GATK
+  --outFileNamePrefix SampleA_                          # prefix for all output files
+
+
+
+
+
+
+
