@@ -1,3 +1,13 @@
+###RUN FASTQC before STAR 
+
+which fastqc  #see availability
+fastqc --version
+
+fastqc SampleA_R1.fastq.gz -o qc/
+fastqc SampleA_R2.fastq.gz -o qc/
+
+#this will output fastqc.html files
+
 ### STAR: Spliced Transcripts Alignment to a Reference (splice-aware aligner)
 #RNAseq is from mature mRNA (introns removed)
 #run STAR once per sample (one R1 + R2 file)
