@@ -1,0 +1,46 @@
+https://gatk.broadinstitute.org/hc/en-us/articles/360035531192-RNAseq-short-variant-discovery-SNPs-Indels 
+
+#After STAR runs ---> outputs BAM files (binary compressed file that stores aligned sequencing reads)
+#SAM is human readable, BAM is compressed
+# STAR aligns R1 and R2 to reference genome and results go into a single BAM file
+#need BAM for all downstream steps
+
+# AddOrReplaceReadGroups for HaplotypeCaller
+# since BAM is just reads, HC needs to know which sample the reads belong to ("name tag") 
+
+gatk AddOrReplaceReadGroups \  # call the GATK tool
+  -I SampleA_Aligned.sortedByCoord.out.bam \  # input BAM from STAR
+  -O SampleA_rg.bam \  # output BAM with read groups added
+  -RGID 1 \            # read group ID (unique label)
+  -RGLB lib1 \         # library name
+  -RGPL ILLUMINA \     # sequencing platform
+  -RGPU unit1 \        # flowcell/lane (any string is fine)
+  -RGSM SampleA        # sample name (will be outputted in final VCF)
+
+
+https://github.com/CGGOxford/Opossum/blob/master/README.md
+
+OPOSSUM: 
+
+#samtools is a command-line toolkit works w BAM/SAM files
+# reference.fa - used to build your STAR index
+#calmd comapres each read to the reference genome and write mismatches into the BAM as MD tags
+# AddOrReplaceReadGroups only adds metadata, not mismatch information.
+
+samtools calmd -b SampleA_rg.bam reference.fa > SampleA_md.bam
+
+#-b outputs BAM
+#reference genome FROM STAR
+#redirects output to a new BAM with MD tags
+
+python Opossum.py \
+  --BamFile SampleA_md.bam \ #the BAM file with md tags
+  --OutFile SampleA_opossum.bam \ #what Opossum will produece
+  --SoftClipsExist True \ #whether aligner uses soft slips (STAR does)
+  --MapCutoff 40 \ #sets the minimum mapping quality allowed (removes unreliable alignment)
+  --MinFlankStart 3 \ #removes false positives- how many bases at start of each reads should have their base quality set to zero
+  --MinFlankEnd 3 \ #same as above but at end
+  --ProperlyPaired True \ #if true only consider propely paired reads
+  --KeepMismatches False #discared pairs with mismatches- likely from splicing, misalignment
+
+#soft clips: STAR keeps a part of a read that does not align to the genome 
