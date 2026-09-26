@@ -1,0 +1,44 @@
+cd /workspace/lab/houlahanlab/projects/pancancer-geb-egfr/data/alignment/rna
+#press q to quit
+scp oneillks@acf-access-01.csu.mcmaster.ca:/workspace/lab/houlahanlab/projects/pancancer-geb-egfr/data/alignment/rna/34c689e2-a20a-4939-8049-db6d0d36743b /Users/sineadoneill-king/Documents/Houlahan_Lab/Thesis/
+conda env list
+conda activate /workspace/lab/houlahanlab/software/micromamba/envs/gatk_env
+
+gatk AddOrReplaceReadGroups \
+  -I 0af61bc8-3dd4-458b-940d-b251e11c422e.rna_seq.genomic.gdc_realn.bam \
+  -O /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam \
+  -RGID 1 \
+  -RGLB lib1 \
+  -RGPL ILLUMINA \
+  -RGPU unit1 \
+  -RGSM SampleA
+
+  #then need to index this new BAM file and make a BAI filesamtools index /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam
+samtools index /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam
+
+wget https://raw.githubusercontent.com/CGGOxford/Opossum/master/Opossum.py
+
+#to activate micromamba:
+micromamba activate py2
+
+#to run a command
+ micromamba run -n py2 mycommand
+
+#need MD tags?
+samtools calmd -b \
+  /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam \
+  /workspace/lab/houlahanlab/oneillks/reference.fa \
+  > /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.md.bam
+
+
+
+ python2.7 Opossum.py \
+  --BamFile /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam \
+  --OutFile /workspace/lab/houlahanlab/oneillks/0af61bc8.opossum.bam \
+  --SoftClipsExist True \
+  --MapCutoff 40 \
+  --MinFlankStart 3 \
+  --MinFlankEnd 3 \
+  --ProperlyPaired True \
+  --KeepMismatches False
+
