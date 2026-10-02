@@ -1,0 +1,63 @@
+#how to find the BAM files:
+#run /GEB to find it 
+
+cd /workspace/lab/houlahanlab/projects/pancancer-geb-egfr/data/alignment/rna
+#press q to quit
+scp oneillks@acf-access-01.csu.mcmaster.ca:/workspace/lab/houlahanlab/projects/pancancer-geb-egfr/data/alignment/rna/34c689e2-a20a-4939-8049-db6d0d36743b /Users/sineadoneill-king/Documents/Houlahan_Lab/Thesis/
+conda env list
+conda activate /workspace/lab/houlahanlab/software/micromamba/envs/gatk_env
+
+#adding read groups to the BAM files to provide metadata (sample/ what was used.. etc)
+gatk AddOrReplaceReadGroups \
+  -I 0af61bc8-3dd4-458b-940d-b251e11c422e.rna_seq.genomic.gdc_realn.bam \
+  -O /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam \
+  -RGID 1 \
+  -RGLB lib1 \
+  -RGPL ILLUMINA \
+  -RGPU unit1 \
+  -RGSM SampleA
+
+  #then need to index this new BAM file and make a BAI filesamtools index /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam
+samtools index /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam
+
+wget https://raw.githubusercontent.com/CGGOxford/Opossum/master/Opossum.py
+
+
+#need to add MD tags- inside each read in a BAM file that tells Oppossum where mismatches are/what bases differ from the reference/ how to adjust base qualities
+
+#In order to run this you need the reference FASTA
+#FASTA explains what bases "should" be there
+#MD tag summarizes mismatches (need that to understand where it's different than the references)
+
+
+#create node in SLURM
+salloc -n 1 -c 2 --mem=16G -t 02:00:00 -p general
+#meaning 1 task, 2 CPU cores, 16 GB ram, two hour time limit, general partition
+
+#within cluster:
+srun samtools calmd -b \ #sam tools is a toolkit for BAM files
+  /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.bam \
+  /workspace/lab/houlahanlab/resources/GRCh38_Indexes/Reference-Fasta-Files/GRCh38.d1.vd1.fa \
+  > /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.md.bam
+
+# Check BAM is valid
+samtools quickcheck output.md.bam
+echo $? # retun 0
+
+#tells the shell that what its looking for might not be in the base but might be in py2 (required for opposum)
+micromamba activate /workspace/lab/houlahanlab/oneillks/micromamba_root/envs/py2
+#should change from (base) to (py2)
+
+#to activate micromamba:
+micromamba activate py2
+
+#so now its running python in the py2 environment
+python Opossum.py \ 
+  --BamFile /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.md.bam \
+  --OutFile /workspace/lab/houlahanlab/oneillks/0af61bc8.opossum.bam \
+  --SoftClipsExist True \
+  --MapCutoff 40 \
+  --MinFlankStart 3 \
+  --MinFlankEnd 3 \
+  --ProperlyPaired True \
+  --KeepMismatches False
