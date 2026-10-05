@@ -1,0 +1,69 @@
+micromamba activate /workspace/lab/houlahanlab/oneillks/micromamba_root/envs/arcas-hla
+
+conda install -c bioconda -c conda-forge kallisto bedtools
+#work around to try and install these packages without user permission
+
+tmux #to get into background (look up control B)
+salloc -n 1 -c 2 --mem=16G -t 08:00:00 -p general
+
+srun --pty bash # to get on the node
+hostname # to check whether you are in the correct node
+
+#press ctrl b + d to exit tmux
+
+micromamba activate /workspace/lab/houlahanlab/oneillks/micromamba_root/envs/arcas-hla
+
+# -o arcas_output = save results in arcas_output/
+# -t 2 = use 2 CPU cores
+# -v = show progress messages
+#can't have notes after \ (won't run)
+
+./arcasHLA reference --version 3.24.0 # need to call in the reference
+
+./arcasHLA extract \
+    /workspace/lab/houlahanlab/oneillks/0af61bc8.realn.rg.md.bam \
+    -o arcas_output \
+    -t 2 \
+    -v
+``
+#this step is to only extract the interesting chromosomes
+#if you want to learn more about any command
+./arcasHLA extract --help # will hell you more about the commands in the extract
+
+conda --no-plugins install --solver=classic biopython
+conda --no-plugins install --solver=classic pandas
+conda --no-plugins install --solver=classic scipy
+conda --no-plugins install --solver=classic -c bioconda -c conda-forge "kallisto=0.44.0"
+
+./arcasHLA genotype \
+    arcas_output/0af61bc8.realn.rg.md.extracted.1.fq.gz \
+    arcas_output/0af61bc8.realn.rg.md.extracted.2.fq.gz \
+    -o arcas_output \
+    -t 2 \
+    -v
+
+#slashes have to be end of the line
+
+conda --no-plugins install --solver=classic -c bioconda -c conda-forge "kallisto=0.44.0"
+conda --no-plugins install --solver=classic -c bioconda -c conda-forge "kallisto=0.44.0"
+`
+
+squeue -u oneillks #this can check how your interactive nodes are doing
+
+conda --no-plugins create \
+    -n arcas-hla-044 \
+    --solver=classic \
+    python=3.10 \
+    kallisto=0.44.0 \
+    -c bioconda \
+    -c conda-forge
+
+$ conda activate arcas-hla-044 
+
+conda --no-plugins install --solver=classic \
+    numpy \
+    pandas \
+    scipy \
+    biopython \
+    bedtools \
+    samtools
