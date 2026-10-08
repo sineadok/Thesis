@@ -61,3 +61,23 @@ python Opossum.py \
   --MinFlankEnd 3 \
   --ProperlyPaired True \
   --KeepMismatches False
+
+#move to Opposum wd
+cd ~/opossum
+  gatk HaplotypeCaller \
+  -R /workspace/lab/houlahanlab/resources/GRCh38_Indexes/Reference-Fasta-Files/GRCh38.d1.vd1.fa \
+  -I 0af61bc8.opossum.bam \
+  -O 0af61bc8.opossum.vcf.gdz
+
+  ls -lh 0af61bc8.opossum.vcf.gz #check it
+
+  mv 0af61bc8.opossum.vcf.gdz 0af61bc8.opossum.vcf #renames it
+
+  #snpEFF
+  snpEff ann \
+  -noStats \
+  -onlyProtein \
+  -fastaProt snpEff_protein_changes.fasta \
+  <DATABASE> \
+  input.vcf.gz \
+  > annotated.vcf
