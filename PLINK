@@ -1,0 +1,88 @@
+#set wd: to access PLINK files
+cd /workspace/lab/houlahanlab/resources/external_datasets/tcga_pancancer_atlas
+
+#testing to see if PLINK can read the dataset
+/workspace/lab/houlahanlab/software/plink/plink \
+  --bfile PCA.r1.TCGAbarcode.merge.tnSwapCorrected.10389 \
+  --freq \
+  --out ~/plink_test
+
+#find sample ID in fam file (edit TCGA accordingly)
+  grep "TCGA-06-2561" PCA.r1.TCGAbarcode.merge.tnSwapCorrected.10389.fam
+
+#create keep file for that specific sample to extract it
+#says sample ID twice to match the .fam file output
+  echo "TCGA-06-2561-10A-01W-0837-08 TCGA-06-2561-10A-01W-0837-08" > keep.txt
+
+#export the single sample to a VCF
+#out defines the prefix of the output files
+  /workspace/lab/houlahanlab/software/plink/plink \
+  --bfile PCA.r1.TCGAbarcode.merge.tnSwapCorrected.10389 \
+  --keep keep.txt \
+  --recode vcf \ 
+  --out ~/TCGA-06-2561
+
+#want to extract only EGFR variants from the sample
+# EGFR coordinates in GRCh37 (since the PLINK files used GRCh37)
+# chr7:55086714-55279321
+
+/workspace/lab/houlahanlab/software/plink/plink \
+  --bfile PCA.r1.TCGAbarcode.merge.tnSwapCorrected.10389 \
+  --keep keep.txt \
+  --chr 7 \
+  --from-bp 55086714 \
+  --to-bp 55279321 \
+  --recode vcf \
+  --out TCGA-06-2561.EGFR
+
+  #command above runs the PLINK program, and what dataset to use, keep samples there, keep chr 7/bp from a certain point, convert into vcf format, aand name them with the prefix
+
+  # rename for clarity
+mv TCGA-06-2561.EGFR.vcf TCGA-06-2561.dna.EGFR.vcf
+
+# count EGFR variants
+grep -vc "^#" TCGA-06-2561.dna.EGFR.vcf
+
+# convert VCF positions to BED format
+# required because the UCSC liftOver tool expects BED coordinates as input
+# BED format uses 0-based coordinates
+
+# grep -v "^#" shows all lines that do NOT start with #
+# removes VCF headers and leaves only variant records
+
+#first removes the headers- so variant rows remain
+#awk manipulates columns, adds chr in front, subtracts one (to get from -1 to 0 bed coordinate)
+#for the format requirede for lift0ver
+
+grep -v "^#" TCGA-06-2561.dna.EGFR.vcf \
+| awk 'BEGIN{OFS="\t"} {print "chr"$1,$2-1,$2}' \
+> TCGA-06-2561.EGFR.hg19.bed
+
+ #chain file location
+/workspace/lab/houlahanlab/resources/chain_files/hg19ToHg38.over.chain
+
+# convert EGFR coordinates from GRCh37 (hg19) to GRCh38 (hg38)
+
+/workspace/lab/houlahanlab/software/liftOver \
+TCGA-06-2561.EGFR.hg19.bed \
+/workspace/lab/houlahanlab/resources/chain_files/hg19ToHg38.over.chain \
+TCGA-06-2561.EGFR.hg38.bed \
+TCGA-06-2561.EGFR.unmapped.bed
+
+# verify all coordinates mapped successfully
+
+wc -l TCGA-06-2561.EGFR.hg19.bed #count lines
+wc -l TCGA-06-2561.EGFR.hg38.bed
+wc -l TCGA-06-2561.EGFR.unmapped.bed 
+
+template:
+  echo "<TCGA_SAMPLE_ID> <TCGA_SAMPLE_ID>" > keep.txt
+
+/workspace/lab/houlahanlab/software/plink/plink \
+  --bfile PCA.r1.TCGAbarcode.merge.tnSwapCorrected.10389 \
+  --keep keep.txt \
+  --recode vcf \
+  --out <sample_name>
+
+  find /workspace/lab/houlahanlab -name "*.chain*" 2>/dev/null # to find things in the directory
+
